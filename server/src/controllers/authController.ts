@@ -54,14 +54,16 @@ async function buildUserResponse(userId: string) {
   };
 }
 
+// In production the frontend (GitHub Pages) and API (Render) are on
+// different origins, so the refresh cookie must be SameSite=None; Secure to
+// be sent cross-site at all. Locally, both run on http://localhost so Lax
+// (and no Secure flag, since there's no TLS) works and is less restrictive.
+const REFRESH_COOKIE_OPTIONS = env.isProduction
+  ? ({ httpOnly: true, secure: true, sameSite: 'none' as const, path: '/api/auth' })
+  : ({ httpOnly: true, secure: false, sameSite: 'lax' as const, path: '/api/auth' });
+
 function setRefreshCookie(res: Response, token: string, days: number) {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: days * 24 * 60 * 60 * 1000,
-    path: '/api/auth',
-  });
+  res.cookie(REFRESH_COOKIE, token, { ...REFRESH_COOKIE_OPTIONS, maxAge: days * 24 * 60 * 60 * 1000 });
 }
 
 const loginSchema = z.object({
@@ -226,7 +228,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
       /* ignore invalid token on logout */
     }
   }
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  res.clearCookie(REFRESH_COOKIE, REFRESH_COOKIE_OPTIONS);
   res.json({ success: true });
 });
 

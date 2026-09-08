@@ -24,6 +24,9 @@ permission overrides per user, from **Users & Roles**.
 
 ## Getting started
 
+Running locally is below. To put this online (GitHub Pages + a free Render
+backend), see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+
 ### 1. Backend
 
 ```bash

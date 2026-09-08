@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable, Column } from '../../components/DataTable';
 import { useFetch } from '../../hooks/useFetch';
+import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../utils/permissions';
 
@@ -28,8 +29,17 @@ export function ReportsPage() {
   const rows = data?.rows ?? [];
   const columns: Column<Record<string, any>>[] = rows.length > 0 ? Object.keys(rows[0]).map((key) => ({ header: key, accessor: (r) => String(r[key]) })) : [];
 
-  function download() {
-    window.open(`/api/reports?type=${type}&format=csv`, '_blank');
+  async function download() {
+    // Use the authenticated axios client (not a plain link/window.open) so
+    // the Authorization header is attached -- the API requires it and has
+    // no session cookie to fall back on for this route.
+    const res = await api.get(`/reports?type=${type}&format=csv`, { responseType: 'blob' });
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}-report.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (

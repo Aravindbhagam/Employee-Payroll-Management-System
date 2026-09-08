@@ -9,6 +9,18 @@ async function hash(pw: string) {
 }
 
 async function main() {
+  // Safe to invoke on every boot (see server/package.json "start:prod"): on
+  // hosts with an ephemeral filesystem (e.g. Render's free tier) the SQLite
+  // file is recreated from migrations on each restart, so re-seeding demo
+  // data automatically keeps the deployed demo usable. If real data already
+  // exists, skip straight through instead of re-running (and crashing on)
+  // the one-time-only inserts below.
+  const alreadySeeded = await prisma.user.findUnique({ where: { email: 'superadmin@nimbuscorp.com' } });
+  if (alreadySeeded) {
+    console.log('Database already seeded, skipping.');
+    return;
+  }
+
   console.log('Seeding database...');
 
   // ---- Company settings ----

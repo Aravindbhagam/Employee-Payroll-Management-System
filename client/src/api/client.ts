@@ -11,8 +11,14 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
 
+// In local dev this stays "/api" and Vite's dev-server proxy (vite.config.ts)
+// forwards it to the backend. In a static deployment (e.g. GitHub Pages)
+// there is no proxy, so VITE_API_URL must point directly at the deployed
+// API's origin (e.g. https://payrollpro-api.onrender.com/api).
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
@@ -28,7 +34,7 @@ let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
   try {
-    const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
     const token = res.data.accessToken as string;
     setAccessToken(token);
     return token;
