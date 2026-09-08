@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: SQLite has no native enum type, so role/status/permission/etc.
+// fields below are plain Strings. The canonical value sets live in
+// src/types/enums.ts (TypeScript union types) and are enforced at the
+// application boundary via zod validation, not by the database.
+
+model User {
+  id                  String    @id @default(uuid())
+  employeeCode        String    @unique
+  email               String    @unique
+  passwordHash        String
+  role                String
+  status              String    @default("ACTIVE")
+  departmentId        String?
+  department          Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+  managerId           String?
+  manager             User?     @relation("ManagerReports", fields: [managerId], references: [id])
+  reports             User[]    @relation("ManagerReports")
+
+  twoFactorEnabled    Boolean   @default(false)
+  twoFactorSecret     String?
+
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  mustChangePassword  Boolean   @default(false)
+
+  resetToken          String?
+  resetTokenExpires   DateTime?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  employee            Employee?
+  sessions            Session[]
+  permissionOverrides UserPermission[]
+  auditLogs           AuditLog[]
+  approverPayrollRuns PayrollRun[] @relation("ApprovedBy")
+  reviewerPayrollRuns PayrollRun[] @relation("ReviewedBy")
+  createdPayrollRuns  PayrollRun[] @relation("CreatedBy")
+  announcements       Announcement[]
+  departmentsManaged  Department[] @relation("DepartmentManager")
+
+  @@index([role])
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash     String
+  userAgent     String?
+  ip            String?
+  rememberMe    Boolean  @default(false)
+  revoked       Boolean  @default(false)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+}
+
+model RolePermission {
+  id       String  @id @default(uuid())
+  role     String
+  resource String
+  action   String
+  allowed  Boolean @default(false)
+
+  @@unique([role, resource, action])
+}
+
+model UserPermission {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource String
+  action   String
+  allowed  Boolean
+
+  @@unique([userId, resource, action])
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  managerId   String?
+  manager     User?    @relation("DepartmentManager", fields: [managerId], references: [id])
+  createdAt   DateTime @default(now())
+
+  users        User[]       @relation("UserDepartment")
+  employees    Employee[]
+  designations Designation[]
+}
+
+model Designation {
+  id           String     @id @default(uuid())
+  title        String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  employees    Employee[]
+
+  @@unique([title, departmentId])
+}
+
+model Employee {
+  id               String         @id @default(uuid())
+  userId           String         @unique
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName        String
+  lastName         String
+  phone            String?
+  address          String?
+  dateOfBirth      DateTime?
+  dateOfJoining    DateTime       @default(now())
+  departmentId     String?
+  department       Department?    @relation(fields: [departmentId], references: [id])
+  designationId    String?
+  designation      Designation?   @relation(fields: [designationId], references: [id])
+  employmentType   String         @default("Full-Time")
+  status           String         @default("ACTIVE")
+  photoUrl         String?
+  bankAccountNumber String?
+  bankName         String?
+  taxId            String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  documents        Document[]
+  attendance       Attendance[]
+  leaveRequests    LeaveRequest[]
+  leaveBalances    LeaveBalance[]
+  salaryStructures SalaryStructure[]
+  payslips         Payslip[]
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  type       String
+  fileName   String
+  uploadedAt DateTime @default(now())
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime
+  checkIn     String?
+  checkOut    String?
+  status      String
+  hoursWorked Float    @default(0)
+
+  @@unique([employeeId, date])
+}
+
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType   String
+  startDate   DateTime
+  endDate     DateTime
+  days        Float
+  reason      String?
+  status      String   @default("PENDING")
+  approverId  String?
+  approvedAt  DateTime?
+  rejectReason String?
+  createdAt   DateTime @default(now())
+}
+
+model LeaveBalance {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType  String
+  year       Int
+  allocated  Float
+  used       Float    @default(0)
+
+  @@unique([employeeId, leaveType, year])
+}
+
+model SalaryStructure {
+  id               String   @id @default(uuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  basic            Float
+  hra              Float    @default(0)
+  conveyance       Float    @default(0)
+  medical          Float    @default(0)
+  specialAllowance Float    @default(0)
+  otherAllowances  Float    @default(0)
+  providentFund    Float    @default(0)
+  professionalTax  Float    @default(0)
+  incomeTax        Float    @default(0)
+  otherDeductions  Float    @default(0)
+  ctc              Float
+  effectiveFrom    DateTime @default(now())
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model PayrollRun {
+  id               String    @id @default(uuid())
+  period           String    @unique
+  status           String    @default("DRAFT")
+  totalGross       Float     @default(0)
+  totalDeductions  Float     @default(0)
+  totalNet         Float     @default(0)
+  employeeCount    Int       @default(0)
+
+  createdById      String?
+  createdBy        User?     @relation("CreatedBy", fields: [createdById], references: [id])
+  submittedAt      DateTime?
+
+  reviewedById     String?
+  reviewedBy       User?     @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt       DateTime?
+
+  approvedById     String?
+  approvedBy       User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+
+  processedAt      DateTime?
+  rejectionReason  String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payslips         Payslip[]
+}
+
+model Payslip {
+  id            String     @id @default(uuid())
+  payrollRunId  String
+  payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId    String
+  employee      Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  period        String
+  gross         Float
+  deductions    Float
+  net           Float
+  breakdown     String
+  generatedAt   DateTime   @default(now())
+
+  @@unique([payrollRunId, employeeId])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  userName      String
+  action        String
+  entityType    String
+  entityId      String?
+  previousValue String?
+  newValue      String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType])
+}
+
+model Announcement {
+  id           String   @id @default(uuid())
+  title        String
+  body         String
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  audience     String   @default("ALL")
+  departmentId String?
+  createdAt    DateTime @default(now())
+}
+
+model CompanySettings {
+  id                    String  @id @default("singleton")
+  companyName           String  @default("Acme Corporation")
+  logoUrl               String?
+  address               String?
+  currency              String  @default("USD")
+  fiscalYearStart       String  @default("01-01")
+  sessionTimeoutMinutes Int     @default(30)
+  passwordMinLength     Int     @default(8)
+  maxFailedLoginAttempts Int    @default(5)
+  lockoutMinutes        Int     @default(15)
+  twoFactorRequired     Boolean @default(false)
+
+  defaultProvidentFundRate Float @default(12)
+  defaultProfessionalTax   Float @default(200)
+  defaultIncomeTaxRate     Float @default(10)
+}
