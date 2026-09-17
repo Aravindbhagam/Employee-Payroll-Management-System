@@ -29,26 +29,26 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/payrollpro_test
+      PGSSL: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: server/package-lock.json
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
 
       - name: Install dependencies
-        run: npm ci
+        run: pip install -r requirements.txt
 
       - name: Run tests
-        # tests/globalSetup.js resets the schema of the Postgres service
-        # container above via db/migrate.js's reset(); JWT secrets are
-        # hardcoded in tests/setup.js, so no repository secrets are
-        # required here.
-        run: npm test
+        # tests/conftest.py resets the schema of the Postgres service
+        # container above via db/migrate.py's reset(); JWT secrets are
+        # hardcoded there too, so no repository secrets are required here.
+        run: python -m pytest
 
   client:
     name: Client (syntax check)

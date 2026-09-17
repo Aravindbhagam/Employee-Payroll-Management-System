@@ -6,6 +6,14 @@ dist/
 build/
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
 # Environment
 .env
 .env.local

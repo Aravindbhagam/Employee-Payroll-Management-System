@@ -1,7 +1,7 @@
 # Deploying PayrollPro
 
 The frontend (`client/`) deploys as a static site to **GitHub Pages**. The
-backend (`server/`) is a plain Express + raw-SQL API backed by **PostgreSQL**,
+backend (`server/`) is a plain Python (FastAPI) + raw-SQL API backed by **PostgreSQL**,
 so both the API and its database deploy to **Render**'s free tier. Both are
 wired up with config already committed to this repo — you just need to flip
 a few switches in each platform's UI.
@@ -14,14 +14,13 @@ frontend, then point the backend back at the frontend's URL for CORS.
 1. Go to https://dashboard.render.com → **New** → **Blueprint**.
 2. Connect this GitHub repo. Render will detect `render.yaml` at the repo
    root and propose two resources: a free PostgreSQL database
-   (**payrollpro-db**) and a web service (**payrollpro-api**, Node, free
+   (**payrollpro-db**) and a web service (**payrollpro-api**, Python, free
    plan, built from `server/`) already wired to that database's
    `DATABASE_URL`.
 3. Click **Apply**. Render provisions the database first, then builds and
    starts the API. `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are
    auto-generated; the database schema is applied and demo data seeded
-   automatically on first boot (see `server/package.json`'s `start:prod`
-   script).
+   automatically on first boot (see `render.yaml`'s `startCommand`).
 4. Once live, note the service URL, e.g. `https://payrollpro-api.onrender.com`.
 5. Leave the `CLIENT_ORIGIN` environment variable for now — you'll set it in
    step 3 once you know the Pages URL. (Render will prompt for it during
