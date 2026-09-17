@@ -1,7 +1,32 @@
 # PayrollPro — Employee Payroll Management System
 
-A full-stack, role-based Employee Payroll Management System with secure authentication,
-fine-grained RBAC, payroll approval workflows, and dedicated dashboards for every role.
+**A full-stack, role-based payroll platform** with secure authentication, server-enforced
+RBAC, a multi-stage payroll approval workflow, and five tailored role dashboards.
+
+🔗 **[Live demo](https://aravindbhagam.github.io/Employee-Payroll-Management-System/)** —
+log in with `superadmin@nimbuscorp.com` / `Password123!` (or any [demo account](#demo-accounts))
+to explore.
+
+Built with React, TypeScript, Node.js, Express, Prisma, and Tailwind CSS. Deployed via
+GitHub Actions (frontend → GitHub Pages) and Render (backend API).
+
+## Highlights
+
+- **Role-based access control, enforced server-side.** Five roles — Super Admin, HR Admin,
+  Payroll Admin, Manager, Employee — each governed by a database-backed permission matrix
+  (16 resources × 8 actions) checked independently on every API route, not just hidden in
+  the UI. Super Admin can customize the matrix, or override permissions per individual user.
+- **Real authentication security.** JWT access/refresh token rotation, bcrypt password
+  hashing, TOTP-based two-factor authentication, account lockout after repeated failed
+  logins, and a full audit trail of sensitive actions.
+- **A real payroll approval workflow.** Draft → Calculating → Pending Review → Pending
+  Approval → Approved → Processing → Completed/Rejected, with role-gated transitions and
+  automated payslip generation.
+- **Row-level data scoping.** Managers see only their team; employees see only themselves;
+  company-wide administrative views are restricted to admin roles — enforced in the query
+  layer, not just the response shape.
+- **Five tailored dashboards.** Each role sees different KPIs, charts, and navigation, all
+  driven by the same underlying permission system.
 
 ## Architecture
 
