@@ -5,24 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PayrollPro | Employee Payroll Management System</title>
     <!--
-      Counterpart to public/404.html's redirect: decodes the ?/ encoded path
-      back into a real URL before React Router mounts, so deep links (e.g.
-      /employees/123) work when served as a static SPA on GitHub Pages.
-      https://github.com/rafgraph/spa-github-pages
+      Counterpart to public/404.html's redirect: reads the real path back out
+      of sessionStorage (stashed there before GitHub Pages' 404 fallback sent
+      the visitor here) and restores it with history.replaceState before
+      React Router mounts, so deep links (e.g. /employees/123) and page
+      reloads work correctly when served as a static SPA on GitHub Pages.
     -->
     <script type="text/javascript">
-      (function (l) {
-        if (l.search[1] === '/') {
-          var decoded = l.search
-            .slice(1)
-            .split('&')
-            .map(function (s) {
-              return s.replace(/~and~/g, '&');
-            })
-            .join('?');
-          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+      (function () {
+        var pendingPath = sessionStorage.getItem('payrollpro:pending-path');
+        if (pendingPath) {
+          sessionStorage.removeItem('payrollpro:pending-path');
+          var current = location.pathname + location.search + location.hash;
+          if (pendingPath !== current) {
+            history.replaceState(null, '', pendingPath);
+          }
         }
-      })(window.location);
+      })();
     </script>
   </head>
   <body>
