@@ -4,7 +4,12 @@
 // DATABASE_URL etc. before any test file imports server/src/config/env.ts
 // or config/prisma.ts, since those read process.env at module-load time.
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'file:./prisma/test.db';
+// Overridable so CI can point at its own Postgres service container while
+// local runs default to the payrollpro_test database created alongside
+// payrollpro_dev.
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://postgres:localdevpassword@localhost:5432/payrollpro_test';
 process.env.JWT_ACCESS_SECRET = 'test-access-secret-do-not-use-in-prod';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-do-not-use-in-prod';
 process.env.ACCESS_TOKEN_TTL_MIN = '15';

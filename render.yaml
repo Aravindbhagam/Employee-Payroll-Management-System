@@ -12,7 +12,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:./prod.db
+        fromDatabase:
+          name: payrollpro-db
+          property: connectionString
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -29,3 +31,8 @@ services:
       # dev frontend.
       - key: CLIENT_ORIGIN
         sync: false
+
+databases:
+  - name: payrollpro-db
+    plan: free
+    region: oregon

@@ -1,10 +1,10 @@
 # Deploying PayrollPro
 
 The frontend (`client/`) deploys as a static site to **GitHub Pages**. The
-backend (`server/`) is an Express + Prisma API that needs a real Node process
-and a filesystem for its SQLite database, so it deploys to **Render**'s free
-tier. Both are wired up with config already committed to this repo — you
-just need to flip a few switches in each platform's UI.
+backend (`server/`) is an Express + Prisma API backed by **PostgreSQL**, so
+both the API and its database deploy to **Render**'s free tier. Both are
+wired up with config already committed to this repo — you just need to flip
+a few switches in each platform's UI.
 
 Do these in order: the backend first (frontend needs its URL), then the
 frontend, then point the backend back at the frontend's URL for CORS.
@@ -13,26 +13,28 @@ frontend, then point the backend back at the frontend's URL for CORS.
 
 1. Go to https://dashboard.render.com → **New** → **Blueprint**.
 2. Connect this GitHub repo. Render will detect `render.yaml` at the repo
-   root and propose one service, **payrollpro-api** (Node, free plan, built
-   from `server/`).
-3. Click **Apply**. Render builds and starts it automatically. `JWT_ACCESS_SECRET`
-   and `JWT_REFRESH_SECRET` are auto-generated; the database schema is
-   applied and demo data seeded automatically on first boot (see
-   `server/package.json`'s `start:prod` script).
+   root and propose two resources: a free PostgreSQL database
+   (**payrollpro-db**) and a web service (**payrollpro-api**, Node, free
+   plan, built from `server/`) already wired to that database's
+   `DATABASE_URL`.
+3. Click **Apply**. Render provisions the database first, then builds and
+   starts the API. `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are
+   auto-generated; the database schema is applied and demo data seeded
+   automatically on first boot (see `server/package.json`'s `start:prod`
+   script).
 4. Once live, note the service URL, e.g. `https://payrollpro-api.onrender.com`.
 5. Leave the `CLIENT_ORIGIN` environment variable for now — you'll set it in
    step 3 once you know the Pages URL. (Render will prompt for it during
    blueprint setup since it's marked `sync: false`; any placeholder value is
    fine there, you'll update it after.)
 
-**Note on the free tier:** Render's free web services have no persistent
-disk, so the SQLite database resets whenever the service restarts or
-redeploys. That's expected here — `start:prod` re-applies migrations and
-re-seeds demo data automatically on every boot, so the deployed demo is
-always in a working state. Don't rely on data entered into this deployment
-surviving a restart; for real usage, swap `DATABASE_URL` for a managed
-Postgres/MySQL instance and update `server/prisma/schema.prisma`'s
-`datasource` block accordingly.
+**Note on the free tier:** Render's free PostgreSQL databases expire 90 days
+after creation — Render will email you before that happens. At that point
+you can either upgrade the database to a paid plan (~$6-7/mo) or spin up a
+fresh free instance and re-apply the blueprint. Either way, the web
+service's own free plan (no persistent disk) is no longer where data lives,
+so restarts and redeploys of **payrollpro-api** itself no longer wipe your
+data — only the database's own 90-day expiry does.
 
 ## 2. Deploy the frontend to GitHub Pages
 

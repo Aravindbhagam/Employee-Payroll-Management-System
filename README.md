@@ -30,7 +30,7 @@ GitHub Actions (frontend → GitHub Pages) and Render (backend API).
 
 ## Architecture
 
-- **`server/`** — Node.js + Express + TypeScript API, Prisma ORM (SQLite), JWT auth
+- **`server/`** — Node.js + Express + TypeScript API, Prisma ORM (PostgreSQL), JWT auth
   (access + refresh tokens), bcrypt password hashing, TOTP-based two-factor authentication,
   account lockout, audit logging, and a database-backed role/permission matrix enforced on
   every route.
@@ -54,11 +54,13 @@ backend), see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
 ### 1. Backend
 
+Requires a local PostgreSQL server (e.g. `createdb payrollpro_dev`).
+
 ```bash
 cd server
-cp .env.example .env   # edit JWT secrets for anything beyond local dev
+cp .env.example .env   # edit DATABASE_URL / JWT secrets for your local Postgres
 npm install
-npx prisma migrate dev --name init   # creates the SQLite DB and applies the schema
+npx prisma migrate dev   # applies the schema to your Postgres database
 npx prisma db seed                    # seeds demo data (or: npx ts-node prisma/seed.ts)
 npm run dev                           # starts the API on http://localhost:4000
 ```

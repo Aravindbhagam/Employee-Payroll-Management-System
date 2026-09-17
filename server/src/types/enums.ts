@@ -1,5 +1,6 @@
-// SQLite has no native enum type, so these values are stored as plain
-// strings in the database and enforced here at the TypeScript/zod boundary.
+// These values are stored as plain strings in the database (see the
+// datasource comment in prisma/schema.prisma) and enforced here at the
+// TypeScript/zod boundary.
 
 export const ROLE_NAMES = ['SUPER_ADMIN', 'HR_ADMIN', 'PAYROLL_ADMIN', 'MANAGER', 'EMPLOYEE'] as const;
 export type RoleName = (typeof ROLE_NAMES)[number];

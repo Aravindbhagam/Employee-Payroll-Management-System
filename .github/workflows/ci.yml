@@ -13,6 +13,22 @@ jobs:
     defaults:
       run:
         working-directory: server
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: payrollpro_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/payrollpro_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,9 +53,10 @@ jobs:
         run: npm run typecheck:test
 
       - name: Run tests
-        # The test suite is fully self-contained: it provisions its own
-        # SQLite database and hardcodes its own JWT secrets in
-        # tests/setup.ts, so no repository secrets are required here.
+        # tests/globalSetup.ts resets the schema of the Postgres service
+        # container above via `prisma migrate reset`; JWT secrets are
+        # hardcoded in tests/setup.ts, so no repository secrets are
+        # required here.
         run: npm test
 
   client:

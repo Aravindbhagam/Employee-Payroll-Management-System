@@ -29,12 +29,10 @@ async function main() {
     )
   );
 
-  // Safe to invoke on every boot (see server/package.json "start:prod"): on
-  // hosts with an ephemeral filesystem (e.g. Render's free tier) the SQLite
-  // file is recreated from migrations on each restart, so re-seeding demo
-  // data automatically keeps the deployed demo usable. If real data already
-  // exists, skip straight through instead of re-running (and crashing on)
-  // the one-time-only inserts below.
+  // Safe to invoke on every boot (see server/package.json "start:prod"):
+  // this is a no-op once the demo superadmin exists, so restarts and
+  // redeploys never re-run (and crash on) the one-time-only inserts below.
+  // If real data already exists, skip straight through instead.
   const alreadySeeded = await prisma.user.findUnique({ where: { email: 'superadmin@nimbuscorp.com' } });
   if (alreadySeeded) {
     console.log('Database already seeded (role permission matrix re-synced).');
