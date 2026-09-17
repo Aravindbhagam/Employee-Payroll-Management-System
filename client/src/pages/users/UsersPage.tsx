@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Lock, Unlock, KeyRound, Ban, CheckCircle, ShieldCheck, Plus } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable } from '../../components/DataTable';
+import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { useFetch } from '../../hooks/useFetch';
@@ -18,8 +19,10 @@ export function UsersPage() {
   const [permTarget, setPermTarget] = useState<string | null>(null);
   const [resetResult, setResetResult] = useState<{ email: string; password: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
 
-  const { data, loading, refetch } = useFetch<{ users: any[] }>('/users');
+  const { data, loading, refetch } = useFetch<{ users: any[]; total: number }>(`/users?page=${page}&pageSize=${pageSize}`, [page]);
 
   async function toggleStatus(u: any) {
     setError(null);
@@ -134,6 +137,7 @@ export function UsersPage() {
               },
             ]}
           />
+          <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onPageChange={setPage} />
         </div>
       )}
 

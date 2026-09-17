@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable } from '../../components/DataTable';
+import { Pagination } from '../../components/Pagination';
 import { useFetch } from '../../hooks/useFetch';
 import { formatDateTime } from '../../utils/format';
+
+const PAGE_SIZE = 25;
 
 export function AuditLogsPage() {
   const [action, setAction] = useState('');
   const [entityType, setEntityType] = useState('');
   const [page, setPage] = useState(1);
 
-  const params = new URLSearchParams({ page: String(page), pageSize: '25' });
+  const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
   if (action) params.set('action', action);
   if (entityType) params.set('entityType', entityType);
 
@@ -48,17 +51,7 @@ export function AuditLogsPage() {
             { header: 'Date/Time', accessor: (l) => formatDateTime(l.createdAt) },
           ]}
         />
-        <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
-          <span>{data?.total ?? 0} total entries</span>
-          <div className="flex gap-2">
-            <button className="btn-secondary" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              Previous
-            </button>
-            <button className="btn-secondary" disabled={(data?.logs.length ?? 0) < 25} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
       </div>
     </div>
   );

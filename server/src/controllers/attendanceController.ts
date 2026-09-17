@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { asyncHandler, ApiError } from '../middleware/errorHandler';
 import { recordAudit } from '../utils/audit';
 import { employeeIdForUser, employeeScopeFilter } from '../utils/scope';
+import { parsePagination } from '../utils/pagination';
 
 function startOfDay(d: Date) {
   const copy = new Date(d);
@@ -32,12 +33,20 @@ export const listAttendance = asyncHandler(async (req: Request, res: Response) =
     where.date = { gte: new Date(y, m - 1, 1), lt: new Date(y, m, 1) };
   }
 
-  const records = await prisma.attendance.findMany({
-    where,
-    include: { employee: { select: { firstName: true, lastName: true, id: true, department: { select: { name: true } } } } },
-    orderBy: { date: 'desc' },
+  const pagination = parsePagination(req, { optIn: true });
+  const [records, total] = await Promise.all([
+    prisma.attendance.findMany({
+      where,
+      include: { employee: { select: { firstName: true, lastName: true, id: true, department: { select: { name: true } } } } },
+      orderBy: { date: 'desc' },
+      ...(pagination ? { take: pagination.take, skip: pagination.skip } : {}),
+    }),
+    pagination ? prisma.attendance.count({ where }) : Promise.resolve(undefined),
+  ]);
+  res.json({
+    attendance: records,
+    ...(pagination ? { total, page: pagination.page, pageSize: pagination.pageSize } : {}),
   });
-  res.json({ attendance: records });
 });
 
 export const checkIn = asyncHandler(async (req: Request, res: Response) => {

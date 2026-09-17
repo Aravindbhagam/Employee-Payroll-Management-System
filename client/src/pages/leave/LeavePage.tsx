@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Check, X, Plus } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable } from '../../components/DataTable';
+import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { useFetch } from '../../hooks/useFetch';
@@ -19,8 +20,10 @@ export function LeavePage() {
   const [error, setError] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
 
-  const { data, loading, refetch } = useFetch<{ leaveRequests: any[] }>('/leave');
+  const { data, loading, refetch } = useFetch<{ leaveRequests: any[]; total: number }>(`/leave?page=${page}&pageSize=${pageSize}`, [page]);
   const { data: balanceData } = useFetch<{ balances: any[] }>('/leave/balances');
 
   const canApprove = can(user, 'LEAVE', 'APPROVE');
@@ -124,6 +127,7 @@ export function LeavePage() {
             },
           ]}
         />
+        <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onPageChange={setPage} />
       </div>
 
       {showApply && <ApplyLeaveModal onClose={() => setShowApply(false)} onCreated={() => { setShowApply(false); refetch(); }} />}

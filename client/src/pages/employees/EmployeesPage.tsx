@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Building2 } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable } from '../../components/DataTable';
+import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../context/AuthContext';
@@ -18,8 +19,12 @@ export function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [tab, setTab] = useState<'employees' | 'departments'>('employees');
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
 
-  const { data, loading, refetch } = useFetch<{ employees: any[] }>(`/employees${search ? `?search=${encodeURIComponent(search)}` : ''}`, [search]);
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (search) params.set('search', search);
+  const { data, loading, refetch } = useFetch<{ employees: any[]; total: number }>(`/employees?${params.toString()}`, [search, page]);
 
   const canManageOrgStructure = can(user, 'DEPARTMENTS', 'MANAGE') || can(user, 'DESIGNATIONS', 'MANAGE');
 
@@ -61,7 +66,15 @@ export function EmployeesPage() {
           <div className="mb-4 flex items-center gap-2">
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input className="input pl-9" placeholder="Search employees..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input
+                className="input pl-9"
+                placeholder="Search employees..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
             </div>
           </div>
 
@@ -101,6 +114,7 @@ export function EmployeesPage() {
               },
             ]}
           />
+          <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onPageChange={setPage} />
         </div>
       )}
 

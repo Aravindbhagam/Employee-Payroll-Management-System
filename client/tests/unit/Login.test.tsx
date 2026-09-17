@@ -105,6 +105,22 @@ describe('Login page', () => {
     expect(await screen.findByText('If an account exists, password reset instructions have been sent.')).toBeInTheDocument();
   });
 
+  it('surfaces a clickable dev reset link when the API echoes devResetToken (no email service configured)', async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockResolvedValue({
+      data: { success: true, message: 'If an account exists, password reset instructions have been sent.', devResetToken: 'abc123' },
+    });
+    useAuthMock.mockReturnValue({ user: null, loading: false, login: vi.fn(), verifyTwoFactor: vi.fn() });
+    renderLogin();
+
+    await user.click(screen.getByText('Forgot password?'));
+    await user.type(screen.getByLabelText('Email or Employee ID'), 'someone@nimbuscorp.com');
+    await user.click(screen.getByRole('button', { name: 'Send reset instructions' }));
+
+    const link = await screen.findByRole('link', { name: 'open the reset link' });
+    expect(link).toHaveAttribute('href', '/reset-password?token=abc123');
+  });
+
   it('redirects straight to the dashboard if the user is already authenticated', () => {
     useAuthMock.mockReturnValue({ user: { id: 'u1' }, loading: false, login: vi.fn(), verifyTwoFactor: vi.fn() });
     renderLogin();

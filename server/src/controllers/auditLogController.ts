@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { asyncHandler } from '../middleware/errorHandler';
+import { parsePagination } from '../utils/pagination';
 
 export const listAuditLogs = asyncHandler(async (req: Request, res: Response) => {
-  const { action, entityType, userId, from, to, page = '1', pageSize = '50' } = req.query as Record<string, string | undefined>;
+  const { action, entityType, userId, from, to } = req.query as Record<string, string | undefined>;
 
   const where: any = {};
   if (action) where.action = { contains: action };
@@ -15,11 +16,10 @@ export const listAuditLogs = asyncHandler(async (req: Request, res: Response) =>
     if (to) where.createdAt.lte = new Date(to);
   }
 
-  const take = Math.min(parseInt(pageSize, 10) || 50, 200);
-  const skip = (Math.max(parseInt(page, 10) || 1, 1) - 1) * take;
+  const pagination = parsePagination(req, { defaultPageSize: 50 })!;
 
   const [logs, total] = await Promise.all([
-    prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
+    prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, take: pagination.take, skip: pagination.skip }),
     prisma.auditLog.count({ where }),
   ]);
 
@@ -29,5 +29,5 @@ export const listAuditLogs = asyncHandler(async (req: Request, res: Response) =>
     newValue: l.newValue ? JSON.parse(l.newValue) : null,
   }));
 
-  res.json({ logs: parsed, total, page: Number(page), pageSize: take });
+  res.json({ logs: parsed, total, page: pagination.page, pageSize: pagination.pageSize });
 });

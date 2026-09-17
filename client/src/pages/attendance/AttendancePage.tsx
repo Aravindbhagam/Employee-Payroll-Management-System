@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LogIn, LogOut } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { DataTable } from '../../components/DataTable';
+import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useFetch } from '../../hooks/useFetch';
 import { api, apiErrorMessage } from '../../api/client';
@@ -14,8 +15,13 @@ export function AttendancePage() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'in' | 'out' | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
 
-  const { data, loading, refetch } = useFetch<{ attendance: any[] }>(`/attendance?month=${month}`, [month]);
+  const { data, loading, refetch } = useFetch<{ attendance: any[]; total: number }>(
+    `/attendance?month=${month}&page=${page}&pageSize=${pageSize}`,
+    [month, page]
+  );
 
   async function checkIn() {
     setBusy('in');
@@ -69,7 +75,15 @@ export function AttendancePage() {
       <div className="card">
         <div className="mb-4 flex items-center gap-2">
           <label className="label mb-0">Month</label>
-          <input type="month" className="input w-auto" value={month} onChange={(e) => setMonth(e.target.value)} />
+          <input
+            type="month"
+            className="input w-auto"
+            value={month}
+            onChange={(e) => {
+              setMonth(e.target.value);
+              setPage(1);
+            }}
+          />
         </div>
 
         <DataTable
@@ -92,6 +106,7 @@ export function AttendancePage() {
             { header: 'Status', accessor: (a: any) => <StatusBadge status={a.status} /> },
           ]}
         />
+        <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onPageChange={setPage} />
       </div>
     </div>
   );

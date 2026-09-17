@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { asyncHandler, ApiError } from '../middleware/errorHandler';
 import { recordAudit } from '../utils/audit';
 import { employeeIdForUser, employeeScopeFilter, teamEmployeeIds } from '../utils/scope';
+import { parsePagination } from '../utils/pagination';
 
 export const listLeaveRequests = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user!;
@@ -18,12 +19,20 @@ export const listLeaveRequests = asyncHandler(async (req: Request, res: Response
   }
   if (status) where.status = status;
 
-  const requests = await prisma.leaveRequest.findMany({
-    where,
-    include: { employee: { select: { firstName: true, lastName: true, id: true, department: { select: { name: true } } } } },
-    orderBy: { createdAt: 'desc' },
+  const pagination = parsePagination(req, { optIn: true });
+  const [requests, total] = await Promise.all([
+    prisma.leaveRequest.findMany({
+      where,
+      include: { employee: { select: { firstName: true, lastName: true, id: true, department: { select: { name: true } } } } },
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { take: pagination.take, skip: pagination.skip } : {}),
+    }),
+    pagination ? prisma.leaveRequest.count({ where }) : Promise.resolve(undefined),
+  ]);
+  res.json({
+    leaveRequests: requests,
+    ...(pagination ? { total, page: pagination.page, pageSize: pagination.pageSize } : {}),
   });
-  res.json({ leaveRequests: requests });
 });
 
 export const listLeaveBalances = asyncHandler(async (req: Request, res: Response) => {

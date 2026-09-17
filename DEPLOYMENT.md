@@ -62,6 +62,20 @@ data — only the database's own 90-day expiry does.
 That's it: open the Pages URL and log in with any of the demo accounts from
 the README (`Password123!`).
 
+## 4. (Optional) Send real password-reset emails
+
+By default, "Forgot password" logs the reset link server-side instead of
+emailing it (and, outside production, echoes a clickable dev link right in
+the UI) — fine for a demo, not for real users. To send real emails:
+
+1. Create a free [Resend](https://resend.com) account and API key.
+2. In the Render dashboard, open **payrollpro-api** → **Environment** and
+   set `RESEND_API_KEY` to that key. Optionally set `EMAIL_FROM` (defaults
+   to `PayrollPro <onboarding@resend.dev>`, Resend's shared sending domain
+   for testing — verify your own domain in Resend for production use).
+3. Save — Render redeploys, and `forgotPassword` now sends via Resend
+   instead of logging.
+
 ## Troubleshooting
 
 - **Login succeeds but nothing loads / "Session expired" immediately** —

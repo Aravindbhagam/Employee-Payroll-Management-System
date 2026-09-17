@@ -6,6 +6,7 @@ import { recordAudit } from '../utils/audit';
 import { employeeScopeFilter } from '../utils/scope';
 import { hashPassword, maskSensitive, randomToken } from '../utils/password';
 import { ROLE_NAMES, RoleName } from '../types/enums';
+import { parsePagination } from '../utils/pagination';
 
 function canSeeUnmaskedSensitive(role: RoleName, isSelf: boolean) {
   return isSelf || role === 'SUPER_ADMIN' || role === 'PAYROLL_ADMIN' || role === 'HR_ADMIN';
@@ -72,8 +73,20 @@ export const listEmployees = asyncHandler(async (req: Request, res: Response) =>
     ];
   }
 
-  const employees = await prisma.employee.findMany({ where, include: employeeInclude, orderBy: { createdAt: 'desc' } });
-  res.json({ employees: employees.map((e) => serializeEmployee(e, user.role, user.id)) });
+  const pagination = parsePagination(req, { optIn: true });
+  const [employees, total] = await Promise.all([
+    prisma.employee.findMany({
+      where,
+      include: employeeInclude,
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { take: pagination.take, skip: pagination.skip } : {}),
+    }),
+    pagination ? prisma.employee.count({ where }) : Promise.resolve(undefined),
+  ]);
+  res.json({
+    employees: employees.map((e) => serializeEmployee(e, user.role, user.id)),
+    ...(pagination ? { total, page: pagination.page, pageSize: pagination.pageSize } : {}),
+  });
 });
 
 export const getEmployee = asyncHandler(async (req: Request, res: Response) => {

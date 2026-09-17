@@ -10,6 +10,8 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/
 import { recordAudit } from '../utils/audit';
 import { getEffectivePermissions } from '../middleware/rbac';
 import { asyncHandler } from '../middleware/errorHandler';
+import { logger } from '../config/logger';
+import { sendPasswordResetEmail } from '../utils/email';
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -257,14 +259,17 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 
   await recordAudit({ req, userId: user.id, userName: user.email, action: 'PASSWORD_RESET_REQUESTED', entityType: 'User', entityId: user.id });
 
-  // In production this would be emailed to the user -- it must never be
-  // returned in the API response, since that would let anyone who can call
-  // this endpoint reset any account's password without proving ownership of
-  // the email address. It's logged server-side (private deploy logs only)
-  // so the flow is still reachable by an operator; in local development
-  // only, it's also echoed in the response so the flow is testable without
-  // needing an email service or log access.
-  console.log(`[password reset] token for ${user.email}: ${token}`);
+  // The token must never be returned in the API response in production,
+  // since that would let anyone who can call this endpoint reset any
+  // account's password without proving ownership of the email address.
+  // sendPasswordResetEmail sends it via Resend when RESEND_API_KEY is
+  // configured, or logs it server-side otherwise; a failure here must not
+  // break this response or reveal whether the email send succeeded.
+  try {
+    await sendPasswordResetEmail(user.email, token);
+  } catch (err) {
+    logger.error({ err, userId: user.id }, 'Failed to send password reset email');
+  }
   res.json({
     success: true,
     message: 'If an account exists, password reset instructions have been sent.',

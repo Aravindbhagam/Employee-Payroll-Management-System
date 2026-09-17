@@ -31,6 +31,10 @@ services:
       # dev frontend.
       - key: CLIENT_ORIGIN
         sync: false
+      # Optional: leave blank to keep logging password-reset emails
+      # server-side instead of sending them (see server/.env.example).
+      - key: RESEND_API_KEY
+        sync: false
 
 databases:
   - name: payrollpro-db

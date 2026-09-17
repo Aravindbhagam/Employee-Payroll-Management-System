@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Landmark, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth, apiErrorMessage } from '../context/AuthContext';
 import { api } from '../api/client';
@@ -24,6 +24,7 @@ export function Login() {
 
   const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [devResetToken, setDevResetToken] = useState<string | null>(null);
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
 
@@ -66,9 +67,11 @@ export function Login() {
     setError(null);
     setSuccess(null);
     setForgotSubmitting(true);
+    setDevResetToken(null);
     try {
       const res = await api.post('/auth/forgot-password', { identifier: forgotIdentifier });
       setSuccess(res.data.message || 'If an account exists, password reset instructions have been sent.');
+      if (res.data.devResetToken) setDevResetToken(res.data.devResetToken);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -231,6 +234,15 @@ export function Login() {
 
               {error && <div className="rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-700">{error}</div>}
               {success && <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-sm text-emerald-700">{success}</div>}
+              {devResetToken && (
+                <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-800">
+                  Dev/test only (no email service configured):{' '}
+                  <Link className="font-medium underline" to={`/reset-password?token=${devResetToken}`}>
+                    open the reset link
+                  </Link>
+                  .
+                </div>
+              )}
 
               <div>
                 <label className="label" htmlFor="forgot-identifier">
@@ -255,6 +267,7 @@ export function Login() {
                 onClick={() => {
                   setError(null);
                   setSuccess(null);
+                  setDevResetToken(null);
                   setStep('credentials');
                 }}
               >

@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { prisma } from '../config/prisma';
+import { logger } from '../config/logger';
 
 interface AuditParams {
   req?: Request;
@@ -30,6 +31,6 @@ export async function recordAudit(params: AuditParams): Promise<void> {
     });
   } catch (err) {
     // Auditing must never break the primary request flow.
-    console.error('Failed to write audit log', err);
+    logger.error({ err, action, entityType }, 'Failed to write audit log');
   }
 }

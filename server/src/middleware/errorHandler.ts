@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
+import { logger } from '../config/logger';
 
 export class ApiError extends Error {
   status: number;
@@ -17,7 +18,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: err.message });
   }
-  console.error(err);
+  logger.error({ err, path: req.path, method: req.method }, 'Unhandled error');
   return res.status(500).json({ error: 'Internal server error.' });
 }
 

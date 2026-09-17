@@ -6,6 +6,7 @@ import { asyncHandler, ApiError } from '../middleware/errorHandler';
 import { recordAudit } from '../utils/audit';
 import { hashPassword, randomToken } from '../utils/password';
 import { getEffectivePermissions } from '../middleware/rbac';
+import { parsePagination } from '../utils/pagination';
 
 function serializeUser(user: any) {
   return {
@@ -45,8 +46,20 @@ export const listUsers = asyncHandler(async (req: Request, res: Response) => {
       { employee: { lastName: { contains: search } } },
     ];
   }
-  const users = await prisma.user.findMany({ where, include: userInclude, orderBy: { createdAt: 'desc' } });
-  res.json({ users: users.map(serializeUser) });
+  const pagination = parsePagination(req, { optIn: true });
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      include: userInclude,
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { take: pagination.take, skip: pagination.skip } : {}),
+    }),
+    pagination ? prisma.user.count({ where }) : Promise.resolve(undefined),
+  ]);
+  res.json({
+    users: users.map(serializeUser),
+    ...(pagination ? { total, page: pagination.page, pageSize: pagination.pageSize } : {}),
+  });
 });
 
 export const getUser = asyncHandler(async (req: Request, res: Response) => {

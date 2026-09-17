@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import pinoHttp from 'pino-http';
 import { env } from './config/env';
+import { logger } from './config/logger';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { apiRateLimiter } from './middleware/rateLimit';
 
@@ -32,6 +34,7 @@ export const app = express();
 if (env.isProduction) app.set('trust proxy', 1);
 
 app.use(helmet());
+app.use(pinoHttp({ logger, autoLogging: env.nodeEnv !== 'test' }));
 app.use(
   cors({
     origin(origin, callback) {
