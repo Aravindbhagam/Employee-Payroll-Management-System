@@ -7,8 +7,9 @@ RBAC, a multi-stage payroll approval workflow, and five tailored role dashboards
 log in with `superadmin@nimbuscorp.com` / `Password123!` (or any [demo account](#demo-accounts))
 to explore.
 
-Built with a dependency-free HTML/CSS/JavaScript frontend and a Node.js, Express, Prisma
-backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (backend API).
+Built with a dependency-free HTML/CSS/JavaScript frontend and a plain Node.js + Express
+backend using raw SQL (no ORM, no TypeScript). Deployed via GitHub Actions (frontend →
+GitHub Pages) and Render (backend API).
 
 ## Highlights
 
@@ -30,10 +31,10 @@ backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (bac
 
 ## Architecture
 
-- **`server/`** — Node.js + Express + TypeScript API, Prisma ORM (PostgreSQL), JWT auth
-  (access + refresh tokens), bcrypt password hashing, TOTP-based two-factor authentication,
-  account lockout, audit logging, and a database-backed role/permission matrix enforced on
-  every route.
+- **`server/`** — Plain Node.js + Express API (no TypeScript, no ORM) talking to PostgreSQL
+  via hand-written parameterized SQL (`pg`), JWT auth (access + refresh tokens), bcrypt
+  password hashing, TOTP-based two-factor authentication, account lockout, audit logging,
+  and a database-backed role/permission matrix enforced on every route.
 - **`client/`** — Plain HTML/CSS/JavaScript SPA (no framework, no build step): ES modules
   loaded directly by the browser, Tailwind CSS via its CDN script, and a small hash-based
   router (`src/router.js`). Role-aware navigation, dashboards, and feature pages (Employees,
@@ -46,7 +47,7 @@ backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (bac
 Super Admin · HR Admin · Payroll Admin · Manager · Employee — each with a distinct
 dashboard, navigation, and permission set. Permissions are defined per
 `(role, resource, action)` in the database and are enforced **server-side** on every API
-route (`server/src/middleware/rbac.ts`) — the frontend only uses them to decide what to
+route (`server/src/middleware/rbac.js`) — the frontend only uses them to decide what to
 render. A Super Admin can customize the role permission matrix, or grant/revoke individual
 permission overrides per user, from **Users & Roles**.
 
@@ -63,8 +64,8 @@ Requires a local PostgreSQL server (e.g. `createdb payrollpro_dev`).
 cd server
 cp .env.example .env   # edit DATABASE_URL / JWT secrets for your local Postgres
 npm install
-npx prisma migrate dev   # applies the schema to your Postgres database
-npx prisma db seed                    # seeds demo data (or: npx ts-node prisma/seed.ts)
+npm run db:migrate                    # applies the schema to your Postgres database
+npm run db:seed                       # seeds demo data
 npm run dev                           # starts the API on http://localhost:4000
 ```
 

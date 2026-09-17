@@ -1,8 +1,8 @@
 # Deploying PayrollPro
 
 The frontend (`client/`) deploys as a static site to **GitHub Pages**. The
-backend (`server/`) is an Express + Prisma API backed by **PostgreSQL**, so
-both the API and its database deploy to **Render**'s free tier. Both are
+backend (`server/`) is a plain Express + raw-SQL API backed by **PostgreSQL**,
+so both the API and its database deploy to **Render**'s free tier. Both are
 wired up with config already committed to this repo — you just need to flip
 a few switches in each platform's UI.
 
