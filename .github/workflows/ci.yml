@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server:
+    name: Server (typecheck + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck (src)
+        run: npm run typecheck
+
+      - name: Typecheck (tests)
+        run: npm run typecheck:test
+
+      - name: Run tests
+        # The test suite is fully self-contained: it provisions its own
+        # SQLite database and hardcodes its own JWT secrets in
+        # tests/setup.ts, so no repository secrets are required here.
+        run: npm test
+
+  client:
+    name: Client (typecheck + tests + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (src)
+        run: npm run lint
+
+      - name: Typecheck (tests)
+        run: npm run typecheck:test
+
+      - name: Run tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

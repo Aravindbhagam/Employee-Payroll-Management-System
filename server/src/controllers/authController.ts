@@ -257,13 +257,18 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 
   await recordAudit({ req, userId: user.id, userName: user.email, action: 'PASSWORD_RESET_REQUESTED', entityType: 'User', entityId: user.id });
 
-  // In production this would be emailed. For this demo environment we log it
-  // server-side and return it in the response so the flow is testable end-to-end.
+  // In production this would be emailed to the user -- it must never be
+  // returned in the API response, since that would let anyone who can call
+  // this endpoint reset any account's password without proving ownership of
+  // the email address. It's logged server-side (private deploy logs only)
+  // so the flow is still reachable by an operator; in local development
+  // only, it's also echoed in the response so the flow is testable without
+  // needing an email service or log access.
   console.log(`[password reset] token for ${user.email}: ${token}`);
   res.json({
     success: true,
     message: 'If an account exists, password reset instructions have been sent.',
-    devResetToken: token,
+    ...(env.isProduction ? {} : { devResetToken: token }),
   });
 });
 

@@ -16,8 +16,15 @@ const clientOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
 
 export const env = {
   port: parseInt(process.env.PORT || '4000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
-  isProduction: process.env.NODE_ENV === 'production',
+  // Getters (not snapshotted values) so behavior stays correct if NODE_ENV
+  // changes after this module first loads -- relevant in tests, and simply
+  // more correct than caching a value that can go stale.
+  get nodeEnv() {
+    return process.env.NODE_ENV || 'development';
+  },
+  get isProduction() {
+    return process.env.NODE_ENV === 'production';
+  },
   clientOrigins,
   jwtAccessSecret: required('JWT_ACCESS_SECRET'),
   jwtRefreshSecret: required('JWT_REFRESH_SECRET'),

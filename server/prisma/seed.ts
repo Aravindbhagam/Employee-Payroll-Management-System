@@ -9,6 +9,26 @@ async function hash(pw: string) {
 }
 
 async function main() {
+  // The role -> permission matrix is always (re)synced from code on every
+  // boot, before the "already seeded" early return below -- it's a cheap,
+  // idempotent set of upserts, and it must run even on a long-lived database
+  // so that permission-matrix fixes shipped in code actually take effect
+  // without requiring a full data wipe. A Super Admin's own customizations
+  // (made via the Users & Roles UI) live in the same table and will be
+  // overwritten back to these defaults on deploy -- that's an accepted
+  // tradeoff for this demo deployment, not something a real multi-tenant
+  // system should do.
+  const defaults = flattenDefaults();
+  await prisma.$transaction(
+    defaults.map((d) =>
+      prisma.rolePermission.upsert({
+        where: { role_resource_action: { role: d.role, resource: d.resource, action: d.action } },
+        update: { allowed: d.allowed },
+        create: d,
+      })
+    )
+  );
+
   // Safe to invoke on every boot (see server/package.json "start:prod"): on
   // hosts with an ephemeral filesystem (e.g. Render's free tier) the SQLite
   // file is recreated from migrations on each restart, so re-seeding demo
@@ -17,7 +37,7 @@ async function main() {
   // the one-time-only inserts below.
   const alreadySeeded = await prisma.user.findUnique({ where: { email: 'superadmin@nimbuscorp.com' } });
   if (alreadySeeded) {
-    console.log('Database already seeded, skipping.');
+    console.log('Database already seeded (role permission matrix re-synced).');
     return;
   }
 
@@ -34,18 +54,6 @@ async function main() {
       currency: 'USD',
     },
   });
-
-  // ---- Role permission matrix (defaults, editable later by Super Admin) ----
-  const defaults = flattenDefaults();
-  await prisma.$transaction(
-    defaults.map((d) =>
-      prisma.rolePermission.upsert({
-        where: { role_resource_action: { role: d.role, resource: d.resource, action: d.action } },
-        update: { allowed: d.allowed },
-        create: d,
-      })
-    )
-  );
 
   // ---- Departments ----
   const departmentNames = [
