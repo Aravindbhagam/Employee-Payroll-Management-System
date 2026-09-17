@@ -60,7 +60,7 @@ jobs:
         run: npm test
 
   client:
-    name: Client (typecheck + tests + build)
+    name: Client (syntax check)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,20 +73,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: client/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck (src)
-        run: npm run lint
-
-      - name: Typecheck (tests)
-        run: npm run typecheck:test
-
-      - name: Run tests
-        run: npm test
-
-      - name: Production build
-        run: npm run build
+      # The client is plain HTML/CSS/JS with no build step (Tailwind loads
+      # via CDN, ES modules load directly in the browser) -- `node --check`
+      # is a cheap way to still catch syntax errors before they ship.
+      - name: Syntax-check all JS modules
+        run: |
+          status=0
+          for f in $(find src -name '*.js'); do
+            node --input-type=module --check < "$f" || status=1
+          done
+          exit $status

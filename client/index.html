@@ -4,28 +4,66 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PayrollPro | Employee Payroll Management System</title>
-    <!--
-      Counterpart to public/404.html's redirect: reads the real path back out
-      of sessionStorage (stashed there before GitHub Pages' 404 fallback sent
-      the visitor here) and restores it with history.replaceState before
-      React Router mounts, so deep links (e.g. /employees/123) and page
-      reloads work correctly when served as a static SPA on GitHub Pages.
-    -->
-    <script type="text/javascript">
-      (function () {
-        var pendingPath = sessionStorage.getItem('payrollpro:pending-path');
-        if (pendingPath) {
-          sessionStorage.removeItem('payrollpro:pending-path');
-          var current = location.pathname + location.search + location.hash;
-          if (pendingPath !== current) {
-            history.replaceState(null, '', pendingPath);
-          }
-        }
-      })();
+    <link rel="icon" href="data:," />
+
+    <!-- Tailwind CSS via CDN (no build step) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Design tokens matching the app's original brand theme.
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8',
+                500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
+              },
+            },
+            boxShadow: {
+              card: '0 1px 3px 0 rgba(30, 27, 75, 0.08), 0 1px 2px -1px rgba(30, 27, 75, 0.08)',
+            },
+            borderRadius: { xl2: '1rem' },
+            keyframes: {
+              fadeIn: { '0%': { opacity: 0, transform: 'translateY(4px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+            },
+            animation: { fadeIn: 'fadeIn 0.2s ease-out' },
+          },
+        },
+      };
     </script>
+
+    <!-- Icon set (same icon names as the icons previously used via lucide-react) -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Tailwind's Play CDN compiles @layer/@apply blocks like this one
+         client-side, so the component classes below (.card, .btn-*, etc.)
+         work exactly like the original build-time Tailwind setup did. -->
+    <style type="text/tailwindcss">
+      html, body, #app { height: 100%; }
+      body { @apply bg-slate-50 text-slate-900 antialiased; }
+
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+      ::-webkit-scrollbar-track { @apply bg-transparent; }
+
+      @layer components {
+        .card { @apply bg-white rounded-xl2 shadow-card border border-slate-100 p-5; }
+        .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
+        .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+        .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
+        .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+        .input { @apply w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition; }
+        .label { @apply block text-sm font-medium text-slate-600 mb-1; }
+        .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium; }
+      }
+    </style>
+
+    <!-- Runtime config (API base URL). Overwritten at deploy time by
+         .github/workflows/deploy-pages.yml with the deployed API's URL. -->
+    <script src="config.js"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="app"></div>
+    <script type="module" src="src/app.js"></script>
   </body>
 </html>

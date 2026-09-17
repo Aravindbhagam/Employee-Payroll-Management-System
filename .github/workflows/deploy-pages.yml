@@ -25,32 +25,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: client/package-lock.json
-
-      - name: Install dependencies
-        working-directory: client
-        run: npm ci
-
-      - name: Build
+      # The client has no build step (Tailwind loads via CDN, ES modules
+      # load directly in the browser) -- the only thing that needs to
+      # happen before publishing is pointing it at the deployed API, since
+      # there's no bundler to bake an env var in at build time.
+      - name: Configure API base URL
         working-directory: client
         env:
           # The API's deployed base URL, e.g. https://payrollpro-api.onrender.com/api
           # Set this as a repository variable (Settings -> Secrets and
           # variables -> Actions -> Variables -> New variable, name API_URL)
           # once the backend is deployed (see render.yaml / DEPLOYMENT.md).
-          VITE_API_URL: ${{ vars.API_URL }}
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-        run: npm run build
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          cat > config.js <<EOF
+          window.APP_CONFIG = { apiBaseUrl: '${API_URL}' };
+          EOF
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: client/dist
+          path: client
 
   deploy:
     needs: build

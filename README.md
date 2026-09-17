@@ -7,8 +7,8 @@ RBAC, a multi-stage payroll approval workflow, and five tailored role dashboards
 log in with `superadmin@nimbuscorp.com` / `Password123!` (or any [demo account](#demo-accounts))
 to explore.
 
-Built with React, TypeScript, Node.js, Express, Prisma, and Tailwind CSS. Deployed via
-GitHub Actions (frontend → GitHub Pages) and Render (backend API).
+Built with a dependency-free HTML/CSS/JavaScript frontend and a Node.js, Express, Prisma
+backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (backend API).
 
 ## Highlights
 
@@ -34,9 +34,12 @@ GitHub Actions (frontend → GitHub Pages) and Render (backend API).
   (access + refresh tokens), bcrypt password hashing, TOTP-based two-factor authentication,
   account lockout, audit logging, and a database-backed role/permission matrix enforced on
   every route.
-- **`client/`** — React + TypeScript + Vite + Tailwind CSS SPA with role-aware navigation,
-  dashboards, and feature pages (Employees, Attendance, Leave, Payroll, Payslips, Reports,
-  Tax & Compliance, Users & Roles, Audit Logs, Settings).
+- **`client/`** — Plain HTML/CSS/JavaScript SPA (no framework, no build step): ES modules
+  loaded directly by the browser, Tailwind CSS via its CDN script, and a small hash-based
+  router (`src/router.js`). Role-aware navigation, dashboards, and feature pages (Employees,
+  Attendance, Leave, Payroll, Payslips, Reports, Tax & Compliance, Users & Roles, Audit Logs,
+  Settings) each live in `src/pages/` as a module exporting a `render(container, ctx)`
+  function.
 
 ## Roles
 
@@ -67,13 +70,17 @@ npm run dev                           # starts the API on http://localhost:4000
 
 ### 2. Frontend
 
+No install or build step — it's static HTML/CSS/JS. Serve the `client/` directory with any
+static file server on port 5173, which is the backend's default `CLIENT_ORIGIN` for CORS
+(ES modules and `fetch` both need a real HTTP origin, not `file://`):
+
 ```bash
 cd client
-npm install
-npm run dev   # starts the SPA on http://localhost:5173 (proxies /api to :4000)
+npx serve . -l 5173   # or: python3 -m http.server 5173
 ```
 
-Open http://localhost:5173.
+`client/config.js` already points at `http://localhost:4000/api` by default, matching the
+backend's default port above. Open http://localhost:5173.
 
 ### Demo accounts
 

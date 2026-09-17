@@ -45,8 +45,9 @@ data — only the database's own 90-day expiry does.
    variable**: name `API_URL`, value the Render URL from step 1 plus `/api`,
    e.g. `https://payrollpro-api.onrender.com/api`.
 3. Push to `main` (or re-run the workflow manually from the **Actions** tab)
-   to trigger a build. The workflow builds `client/` with the correct GitHub
-   Pages base path and the `API_URL` above baked in, then publishes it.
+   to trigger a deploy. The client has no build step (Tailwind loads via
+   CDN, plain ES modules) — the workflow just rewrites `client/config.js`
+   with the `API_URL` above and publishes the `client/` directory as-is.
 4. Once the workflow finishes, your site is live at
    `https://<your-username>.github.io/<repo-name>/`.
 
@@ -82,9 +83,9 @@ the UI) — fine for a demo, not for real users. To send real emails:
   almost always a `CLIENT_ORIGIN` mismatch (step 3) or the `API_URL`
   repository variable being wrong/missing at build time (step 2.2) — check
   your browser's network tab for the actual request origin/URL and compare.
-- **Deep link (e.g. reloading on `/employees/123`) 404s** — this is handled
-  by `client/public/404.html` + the redirect script in `client/index.html`;
-  make sure both shipped in the built `client/dist` (they will, as long as
-  you didn't move `404.html` out of `client/public/`).
+- **Deep link (e.g. reloading on `/employees/123`) 404s** — routes live after
+  a `#` (e.g. `/#/employees/123`), so GitHub Pages always serves the same
+  `index.html` regardless of which route is open and there's nothing extra
+  to configure; if you see a real 404, check the URL actually has the `#`.
 - **Render service sleeps / first request is slow** — expected on the free
   tier; it spins back up on the next request within a few seconds.
