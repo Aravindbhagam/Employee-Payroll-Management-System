@@ -73,3 +73,12 @@ All demo accounts use the password `Password123!`.
   them in full.
 - Every sensitive action (logins, employee/payroll/user changes, permission changes, leave
   approvals, etc.) is written to the audit log, visible to Super Admin under **Audit Logs**.
+
+## Copyright
+
+Copyright © 2026 Aravind Bhagam. All rights reserved.
+
+This repository is proprietary and unlicensed. No license, express or implied, is
+granted to any person to use, copy, modify, merge, publish, distribute, sublicense,
+or sell copies of this software, in whole or in part, without the prior written
+permission of the copyright holder.
