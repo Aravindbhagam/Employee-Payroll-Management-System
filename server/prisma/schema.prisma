@@ -9,11 +9,10 @@ datasource db {
 
 // NOTE: this schema originally targeted SQLite (no native enum type), so
 // role/status/permission/etc. fields below are plain Strings rather than
-// Postgres enums, with the canonical value sets living in
-// src/types/enums.ts (TypeScript union types) and enforced at the
-// application boundary via zod validation. Left as-is on Postgres too:
-// changing to native enums now would be a breaking migration for no
-// functional benefit.
+// Postgres enums, with the canonical value sets living in src/enums.js
+// and enforced at the application boundary via zod validation. Left as-is
+// on Postgres too: changing to native enums now would be a breaking
+// migration for no functional benefit.
 
 model User {
   id                  String    @id @default(uuid())

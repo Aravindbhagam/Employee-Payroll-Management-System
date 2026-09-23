@@ -2,7 +2,7 @@
  * Frontend permission check -- used ONLY to decide what to render (nav items,
  * buttons, routes). This mirrors the server's RBAC matrix for UX purposes,
  * but it is never the security boundary: every API call independently
- * re-checks permissions server-side (see server/src/middleware/rbac.ts), so
+ * re-checks permissions server-side (see server/src/middleware/rbac.js), so
  * hiding a button here does not grant or deny access on its own.
  */
 export function can(user, resource, action) {

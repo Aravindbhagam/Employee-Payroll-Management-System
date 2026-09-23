@@ -8,7 +8,7 @@ on:
 
 jobs:
   server:
-    name: Server (typecheck + tests)
+    name: Server (syntax check + tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,16 +46,20 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Typecheck (src)
-        run: npm run typecheck
-
-      - name: Typecheck (tests)
-        run: npm run typecheck:test
+      # The server is plain JavaScript (native ES modules, no build step) --
+      # `node --check` catches syntax errors before the slower test run.
+      - name: Syntax-check all JS files
+        run: |
+          status=0
+          for f in $(find src prisma tests vitest.config.js -name '*.js'); do
+            node --check "$f" || status=1
+          done
+          exit $status
 
       - name: Run tests
-        # tests/globalSetup.ts resets the schema of the Postgres service
+        # tests/globalSetup.js resets the schema of the Postgres service
         # container above via `prisma migrate reset`; JWT secrets are
-        # hardcoded in tests/setup.ts, so no repository secrets are
+        # hardcoded in tests/setup.js, so no repository secrets are
         # required here.
         run: npm test
 

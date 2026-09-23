@@ -30,10 +30,10 @@ backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (bac
 
 ## Architecture
 
-- **`server/`** — Node.js + Express + TypeScript API, Prisma ORM (PostgreSQL), JWT auth
-  (access + refresh tokens), bcrypt password hashing, TOTP-based two-factor authentication,
-  account lockout, audit logging, and a database-backed role/permission matrix enforced on
-  every route.
+- **`server/`** — Node.js + Express API in plain JavaScript (native ES modules, no build
+  step), Prisma ORM (PostgreSQL), JWT auth (access + refresh tokens), bcrypt password
+  hashing, TOTP-based two-factor authentication, account lockout, audit logging, and a
+  database-backed role/permission matrix enforced on every route.
 - **`client/`** — Plain HTML/CSS/JavaScript SPA (no framework, no build step): ES modules
   loaded directly by the browser, Tailwind CSS via its CDN script, and a small hash-based
   router (`src/router.js`). Role-aware navigation, dashboards, and feature pages (Employees,
@@ -46,7 +46,7 @@ backend. Deployed via GitHub Actions (frontend → GitHub Pages) and Render (bac
 Super Admin · HR Admin · Payroll Admin · Manager · Employee — each with a distinct
 dashboard, navigation, and permission set. Permissions are defined per
 `(role, resource, action)` in the database and are enforced **server-side** on every API
-route (`server/src/middleware/rbac.ts`) — the frontend only uses them to decide what to
+route (`server/src/middleware/rbac.js`) — the frontend only uses them to decide what to
 render. A Super Admin can customize the role permission matrix, or grant/revoke individual
 permission overrides per user, from **Users & Roles**.
 
@@ -64,8 +64,8 @@ cd server
 cp .env.example .env   # edit DATABASE_URL / JWT secrets for your local Postgres
 npm install
 npx prisma migrate dev   # applies the schema to your Postgres database
-npx prisma db seed                    # seeds demo data (or: npx ts-node prisma/seed.ts)
-npm run dev                           # starts the API on http://localhost:4000
+npx prisma db seed                    # seeds demo data (or: npm run prisma:seed)
+npm run dev                           # starts the API on http://localhost:4000 (auto-restarts on changes)
 ```
 
 ### 2. Frontend
