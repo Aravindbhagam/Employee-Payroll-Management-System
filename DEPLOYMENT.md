@@ -1,10 +1,10 @@
 # Deploying PayrollPro
 
 The frontend (`client/`) deploys as a static site to **GitHub Pages**. The
-backend (`server/`) is an Express + Prisma API backed by **PostgreSQL**, so
-both the API and its database deploy to **Render**'s free tier. Both are
-wired up with config already committed to this repo — you just need to flip
-a few switches in each platform's UI.
+backend (`server/`) is a plain-JavaScript Express + Prisma API backed by
+**PostgreSQL**, so both the API and its database deploy to **Render**'s free
+tier. Both are wired up with config already committed to this repo — you
+just need to flip a few switches in each platform's UI.
 
 Do these in order: the backend first (frontend needs its URL), then the
 frontend, then point the backend back at the frontend's URL for CORS.
@@ -12,7 +12,9 @@ frontend, then point the backend back at the frontend's URL for CORS.
 ## 1. Deploy the backend to Render
 
 1. Go to https://dashboard.render.com → **New** → **Blueprint**.
-2. Connect this GitHub repo. Render will detect `render.yaml` at the repo
+2. Connect this GitHub repo and choose the **`main`** branch (the Blueprint
+   deploys whichever branch you pick here, so a feature branch would put
+   unmerged code live). Render will detect `render.yaml` at the repo
    root and propose two resources: a free PostgreSQL database
    (**payrollpro-db**) and a web service (**payrollpro-api**, Node, free
    plan, built from `server/`) already wired to that database's
@@ -35,6 +37,39 @@ fresh free instance and re-apply the blueprint. Either way, the web
 service's own free plan (no persistent disk) is no longer where data lives,
 so restarts and redeploys of **payrollpro-api** itself no longer wipe your
 data — only the database's own 90-day expiry does.
+
+### Already have a Render Blueprint? Point it at `main`
+
+If you already deployed from another branch, re-point that Blueprint instead
+of creating a new one. The free plan allows only one free database, so a
+second Blueprint would fail when it tries to create another `payrollpro-db`.
+
+1. In the Render dashboard, open **Blueprints** and select the Blueprint for
+   this repo.
+2. In its **Settings**, change **Branch** to `main` and save.
+3. Click **Manual Sync** and **Apply** the changes Render lists.
+   - If the sync fails because it can't change the service's runtime (for
+     example from Python to Node), delete only the **payrollpro-api** web
+     service (**Settings** → **Delete Web Service**; keep **payrollpro-db**),
+     then **Manual Sync** again to recreate it as a Node service on the same
+     database. Re-enter `CLIENT_ORIGIN` when prompted. If the service URL
+     changes, update the `API_URL` repository variable (section 2) and
+     re-run the Pages workflow.
+4. Watch **payrollpro-api** → **Logs**. A healthy deploy ends with
+   `All migrations have been successfully applied`, `Seed complete` (or
+   `Database already seeded`), and `Payroll API listening on ...`.
+5. Open `https://<your-api>.onrender.com/api/health`. It should return
+   `{"status":"ok", ...}`.
+
+If the logs show Prisma error `P3005` ("The database schema is not empty"),
+a previous backend left behind tables that Prisma Migrate doesn't track.
+Reset the demo database (this deletes its data; demo accounts are re-seeded
+on the next boot):
+
+1. Open **payrollpro-db** → **Connect**, copy the **PSQL Command**, and run
+   it in a terminal.
+2. Run `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`
+3. On **payrollpro-api**, click **Manual Deploy** → **Deploy latest commit**.
 
 ## 2. Deploy the frontend to GitHub Pages
 
@@ -79,6 +114,14 @@ the UI) — fine for a demo, not for real users. To send real emails:
 
 ## Troubleshooting
 
+- **Sign-in page keeps loading and never shows the form** — on startup the
+  frontend asks the API whether you're already signed in and waits for the
+  answer. Usually the free Render service is just waking up (up to about a
+  minute), so wait and reload. If it still hangs, open
+  `https://<your-api>.onrender.com/api/health` directly: if that doesn't
+  return `{"status":"ok"}`, check the service's **Logs** and confirm its
+  Blueprint deploys the `main` branch (see "Already have a Render
+  Blueprint?" above).
 - **Login succeeds but nothing loads / "Session expired" immediately** —
   almost always a `CLIENT_ORIGIN` mismatch (step 3) or the `API_URL`
   repository variable being wrong/missing at build time (step 2.2) — check
@@ -88,4 +131,7 @@ the UI) — fine for a demo, not for real users. To send real emails:
   `index.html` regardless of which route is open and there's nothing extra
   to configure; if you see a real 404, check the URL actually has the `#`.
 - **Render service sleeps / first request is slow** — expected on the free
-  tier; it spins back up on the next request within a few seconds.
+  tier: the service sleeps after about 15 minutes without traffic, and the
+  next request wakes it, which can take 30–60 seconds.
+- **Deploy fails with Prisma error `P3005`** — see the database reset steps
+  under "Already have a Render Blueprint?" in section 1.
