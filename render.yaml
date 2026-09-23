@@ -5,7 +5,9 @@ services:
     plan: free
     region: oregon
     rootDir: server
-    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    # No compile step (the server is plain JavaScript). --include=dev keeps the
+    # prisma CLI, a devDependency, available for start:prod's migrate + seed.
+    buildCommand: npm install --include=dev && npx prisma generate
     startCommand: npm run start:prod
     autoDeploy: true
     envVars:

@@ -4,8 +4,8 @@ import { icon, renderIcons } from '../icons.js';
  * Imperative modal helper (there's no component tree to mount into).
  * onMount(contentEl, close) runs after the modal is in the DOM, so callers
  * can query form fields and wire up submit handlers; it may call close()
- * itself once its action completes. Matches the original Modal.tsx: only
- * the X button closes it, not a backdrop click.
+ * itself once its action completes. Only the X button closes it, not a
+ * backdrop click.
  */
 export function openModal({ title, wide = false, bodyHtml, onMount }) {
   const overlay = document.createElement('div');
